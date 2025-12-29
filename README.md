@@ -1,5 +1,4 @@
 <html>
-<head>
 <meta charset="utf-8">
 <style>
 html,body{
@@ -56,7 +55,7 @@ canvas{display:block}
   text-align:center;
   font-size:14px;
   opacity:.45;
-  transition:background .25s, opacity .25s;
+  transition:.25s;
 }
 
 .session.active{
@@ -89,6 +88,7 @@ canvas{display:block}
       <canvas id="mt5" width="160" height="160"></canvas>
       <div class="clockLabel">MT5 Server Time</div>
     </div>
+
     <div class="clockWrap">
       <canvas id="ist" width="160" height="160"></canvas>
       <div class="clockLabel">IST</div>
@@ -101,22 +101,15 @@ canvas{display:block}
 </div>
 
 <script>
-// ---------- COLORS ----------
+// ---------- SESSION COLORS ----------
 const sessionColors={
-  "Sydney":"#1f3d2b",
-  "Tokyo":"#1e344a",
-  "London":"#3d2f1f",
+  Sydney:"#1f3d2b",
+  Tokyo:"#1e344a",
+  London:"#3d2f1f",
   "New York":"#35203f"
 };
 
-// ---------- UTC FETCH ----------
-let utcBase = 0;
-fetch("https://worldtimeapi.org/api/timezone/Etc/UTC")
-  .then(r=>r.json())
-  .then(d=>utcBase = new Date(d.datetime).getTime() - Date.now())
-  .catch(()=>utcBase = 0); // fallback to system clock
-
-// ---------- MT5 DST (UTC+2 / UTC+3) ----------
+// ---------- MT5 DST (EU RULE) ----------
 function getMT5Offset(utc){
   const y = utc.getUTCFullYear();
 
@@ -184,9 +177,9 @@ function drawClock(canvas,date){
   hand(sec*Math.PI/30,r*0.83,1.6);
 }
 
-// ---------- SESSION UPDATE ----------
+// ---------- SESSION LOGIC ----------
 function updateSessions(mt5){
-  const nowSec = mt5.getHours()*3600 + mt5.getMinutes()*60 + mt5.getSeconds();
+  const nowSec=mt5.getHours()*3600+mt5.getMinutes()*60+mt5.getSeconds();
   const active=[], inactive=[];
 
   sessions.forEach(s=>{
@@ -195,9 +188,9 @@ function updateSessions(mt5){
   });
 
   [...sessionsEl.children].forEach(el=>{
-    const on = active.some(a=>a.name===el.dataset.name);
+    const on=active.some(a=>a.name===el.dataset.name);
     el.classList.toggle("active",on);
-    el.style.background = on ? sessionColors[el.dataset.name] : "#1a1a1a";
+    el.style.background=on?sessionColors[el.dataset.name]:"#1a1a1a";
   });
 
   const cd=document.getElementById("countdowns");
@@ -212,7 +205,7 @@ function updateSessions(mt5){
     });
 
   if(inactive.length){
-    const n = inactive
+    const n=inactive
       .map(s=>{
         let t=s.start*3600-nowSec;
         if(t<0)t+=86400;
@@ -224,10 +217,9 @@ function updateSessions(mt5){
   }
 }
 
-// ---------- LOOP ----------
+// ---------- MAIN LOOP ----------
 function loop(){
-  const now = Date.now();
-  const utc = new Date(now + utcBase);
+  const utc = new Date(); // reliable OS-synced UTC
 
   const mt5Offset = getMT5Offset(utc);
   const mt5 = new Date(utc.getTime() + mt5Offset*3600000);
